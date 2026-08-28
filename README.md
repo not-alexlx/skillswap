@@ -1,8 +1,8 @@
 # SkillSwap
 
 A React web app that connects high schoolers with peers for mentoring and tutoring.
-Built from the wireframe in `Untitled.pdf`, with the visual design streamlined and
-upgraded for a teen audience (playful palette, soft cards, motion, dark‑mode aware).
+The visual design is streamlined and upgraded for a teen audience (playful palette,
+soft cards, motion, dark‑mode aware).
 
 ## Run it
 
