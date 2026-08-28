@@ -1,0 +1,12 @@
+node_modules
+dist
+dist-ssr
+*.local
+.DS_Store
+.vite
+
+.vercel
+.env*
+
+# Local-only wireframe reference
+Untitled.pdf
