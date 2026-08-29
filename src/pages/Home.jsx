@@ -1,140 +1,118 @@
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext.jsx';
 import { useToast } from '../components/Toast.jsx';
 import Avatar from '../components/Avatar.jsx';
-import { SKILL_CATEGORIES } from '../data/mockData.js';
-import { rankedMatches } from '../utils/matching.js';
+import Post from '../components/Post.jsx';
+import { recommendedTutors } from '../utils/matching.js';
 import {
-  IconBell, IconCheck, IconX, IconArrowRight, IconSparkle, IconChat,
+  IconBell, IconCoin, IconSparkle, IconArrowRight, IconStar,
 } from '../components/Icons.jsx';
 
 export default function Home() {
   const app = useApp();
-  const { user, peers, peerById, activeMatches, requests, unreadNotifications } = app;
+  const { user, peers, peerById, activeMatches, passedTutors, feed, credits, unreadNotifications, actionableCount } = app;
   const navigate = useNavigate();
   const toast = useToast();
+  const [draft, setDraft] = useState('');
 
-  const ranked = rankedMatches(user, peers, 'all');
-  const top = ranked[0];
-  const activePeers = activeMatches.map((id) => peerById[id]).filter(Boolean);
+  const recs = recommendedTutors(user, peers, {
+    exclude: [...activeMatches, ...passedTutors],
+    limit: 5,
+  });
+  const spotlights = [
+    ...activeMatches.map((id) => peerById[id]).filter(Boolean),
+    ...recs.map((r) => r.peer),
+  ].slice(0, 8);
+
+  const share = () => {
+    if (!draft.trim()) return;
+    app.addPost(draft);
+    setDraft('');
+    toast('Posted to your feed');
+  };
 
   return (
     <div className="screen fade-in">
       <div className="head-row page-head">
         <div>
-          <span className="eyebrow">Welcome back,</span>
-          <h1>{user.name}</h1>
+          <span className="eyebrow">SkillSwap</span>
+          <h1 style={{ fontSize: 26 }}>Feed</h1>
         </div>
-        <button className="icon-btn" onClick={() => navigate('/notifications')} aria-label="Notifications">
-          <IconBell size={20} />
-          {unreadNotifications > 0 && <span className="badge">{unreadNotifications}</span>}
-        </button>
+        <div className="row" style={{ gap: 8 }}>
+          <button className="credit-pill" onClick={() => navigate('/credits')} aria-label="Your credits">
+            <IconCoin size={16} /> {credits}
+          </button>
+          <button className="icon-btn" onClick={() => navigate('/notifications')} aria-label="Notifications">
+            <IconBell size={20} />
+            {(unreadNotifications > 0 || actionableCount > 0) && (
+              <span className="badge">{Math.max(unreadNotifications, actionableCount)}</span>
+            )}
+          </button>
+        </div>
       </div>
 
-      {top && (
-        <Link to={`/matches/${top.peer.id}`} className="card pad-lg" style={{ display: 'block', background: 'linear-gradient(135deg, var(--brand), var(--pink))', color: '#fff', border: 'none' }}>
-          <div className="between">
-            <span className="tiny" style={{ fontWeight: 800, opacity: 0.9, display: 'inline-flex', gap: 6, alignItems: 'center' }}>
-              <IconSparkle size={15} /> TOP MATCH FOR YOU
+      {/* Stories: your swaps + auto-recommended tutors */}
+      <div className="story-row">
+        {spotlights.map((p, i) => (
+          <button className="story" key={p.id} onClick={() => navigate(`/u/${p.id}`)}>
+            <span className={`rim ${i >= activeMatches.length ? 'seen' : ''}`}>
+              <Avatar person={p} size="lg" />
             </span>
-            <span className="tiny" style={{ fontWeight: 800 }}>{top.score}%</span>
-          </div>
-          <div className="row" style={{ marginTop: 12 }}>
-            <Avatar person={top.peer} size="lg" />
-            <div className="grow">
-              <div style={{ fontWeight: 800, fontSize: 17 }}>{top.peer.name}</div>
-              <div className="tiny" style={{ opacity: 0.9 }}>
-                Can teach you {top.teaches[0] || top.peer.offeredSkills[0]}
+            <span>{p.name.split(' ')[0]}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Composer */}
+      <div className="post-composer">
+        <Avatar person={user} size="sm" />
+        <textarea
+          rows={1}
+          placeholder="Share a win, a cheat sheet, or ask for help…"
+          value={draft}
+          onChange={(e) => {
+            setDraft(e.target.value);
+            e.target.style.height = 'auto';
+            e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
+          }}
+        />
+        <button className="btn sm" onClick={share} disabled={!draft.trim()}>Post</button>
+      </div>
+
+      {/* Auto-recommendations */}
+      <section className="section" style={{ marginTop: 4 }}>
+        <div className="section-head">
+          <h2 style={{ fontSize: 18 }}><IconSparkle size={16} style={{ verticalAlign: '-2px' }} /> Recommended for you</h2>
+          <Link to="/discover" className="link-btn">Browse</Link>
+        </div>
+        <div className="hscroll">
+          {recs.map(({ peer, score, reasons }) => (
+            <div className="card" key={peer.id} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div className="row">
+                <Avatar person={peer} onClick={() => navigate(`/u/${peer.id}`)} />
+                <div className="grow">
+                  <div style={{ fontWeight: 800, fontSize: 14.5 }}>{peer.name.split(' ')[0]} {peer.name.split(' ')[1]?.[0]}.</div>
+                  <div className="tiny" style={{ color: 'var(--ink-2)', fontWeight: 700 }}>
+                    <span className="star-badge"><IconStar size={11} /> {peer.rating}</span> · {peer.tutored} tutored
+                  </div>
+                </div>
               </div>
+              <div className="wrap">
+                {reasons.slice(0, 2).map((r) => <span className="reason-chip" key={r}>{r}</span>)}
+              </div>
+              <button className="btn sm block" onClick={() => navigate(`/matches/${peer.id}`)}>
+                View · {score}% match <IconArrowRight size={14} />
+              </button>
             </div>
-            <IconArrowRight size={20} />
-          </div>
-        </Link>
-      )}
-
-      <section className="section">
-        <div className="section-head">
-          <h2>Active swaps</h2>
-          <Link to="/matches" className="link-btn">Find more</Link>
-        </div>
-        {activePeers.length === 0 ? (
-          <div className="card muted tiny">No active swaps yet — send a connect request to get started.</div>
-        ) : (
-          <div className="hscroll">
-            {activePeers.map((p) => (
-              <Link to={`/chat/${p.id}`} key={p.id} className="card" style={{ display: 'block' }}>
-                <div className="row">
-                  <Avatar person={p} />
-                  <div className="grow">
-                    <div style={{ fontWeight: 800 }}>{p.name.split(' ')[0]} {p.name.split(' ')[1]?.[0]}.</div>
-                    <div className="tiny muted">{p.offeredSkills[0]}</div>
-                  </div>
-                </div>
-                <button className="btn sm secondary block" style={{ marginTop: 12 }}>
-                  <IconChat size={15} /> Message
-                </button>
-              </Link>
-            ))}
-          </div>
-        )}
-      </section>
-
-      <section className="section">
-        <div className="section-head">
-          <h2>Pending requests</h2>
-          {requests.length > 0 && <Link to="/matches" className="link-btn">See all ({requests.length})</Link>}
-        </div>
-        {requests.length === 0 ? (
-          <div className="card muted tiny">You're all caught up. 🙌</div>
-        ) : (
-          <div className="stack">
-            {requests.map((r) => {
-              const p = peerById[r.peerId];
-              if (!p) return null;
-              return (
-                <div className="card" key={r.id}>
-                  <div className="row">
-                    <Avatar person={p} />
-                    <div className="grow" style={{ cursor: 'pointer' }} onClick={() => navigate(`/u/${p.id}`)}>
-                      <div style={{ fontWeight: 800 }}>{p.name}</div>
-                      <div className="tiny muted">Needs help with {r.need}</div>
-                    </div>
-                  </div>
-                  <p className="tiny muted" style={{ margin: '10px 2px 12px' }}>“{r.note}”</p>
-                  <div className="row" style={{ gap: 8 }}>
-                    <button
-                      className="btn sm block"
-                      onClick={() => { app.acceptRequest(r.id); toast(`You're now swapping with ${p.name.split(' ')[0]}`); }}
-                    >
-                      <IconCheck size={15} /> Accept
-                    </button>
-                    <button
-                      className="btn sm secondary"
-                      onClick={() => { app.declineRequest(r.id); toast('Request dismissed'); }}
-                      aria-label="Decline"
-                    >
-                      <IconX size={15} />
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </section>
-
-      <section className="section">
-        <div className="section-head">
-          <h2>Browse by category</h2>
-        </div>
-        <div className="grid-2">
-          {SKILL_CATEGORIES.map((c) => (
-            <button key={c.id} className="category-tile" onClick={() => navigate(`/category/${c.id}`)}>
-              <span className="emoji" style={{ background: `${c.tint}1f` }}>{c.emoji}</span>
-              {c.label}
-            </button>
           ))}
         </div>
+      </section>
+
+      {/* The social feed */}
+      <section className="section">
+        <div className="section-head"><h2 style={{ fontSize: 18 }}>Latest from your circle</h2></div>
+        {feed.map((post) => <Post key={post.id} post={post} />)}
       </section>
     </div>
   );

@@ -2,24 +2,25 @@ import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext.jsx';
 import Avatar from '../components/Avatar.jsx';
 import {
-  IconEdit, IconClock, IconArrowRight, IconLogOut, IconMatches,
+  IconEdit, IconClock, IconArrowRight, IconLogOut, IconCompass, IconCoin,
 } from '../components/Icons.jsx';
 
 export default function Profile() {
   const app = useApp();
-  const { user, peers } = app;
+  const { user, peers, credits } = app;
   const navigate = useNavigate();
 
   const friends = peers.filter((p) => p.friendState === 'friends');
-  const stats = user.stats || { helped: 0, sessions: 0, rating: 5.0 };
+  const stats = user.stats || { helped: 0, sessions: 0, rating: 5.0, tutored: 0 };
 
   return (
     <div className="screen fade-in">
-      <div className="page-head">
+      <div className="head-row page-head">
         <div className="row">
           <Avatar person={user} size="xl" />
           <div className="grow">
             <h1 style={{ fontSize: 22 }}>{user.name}</h1>
+            {user.headline && <p className="tiny" style={{ fontWeight: 600 }}>{user.headline}</p>}
             <p className="tiny muted">{user.school} · {user.grade} Grade</p>
             <button className="btn sm secondary" style={{ marginTop: 8 }} onClick={() => navigate('/profile/edit')}>
               <IconEdit size={14} /> Edit profile
@@ -29,8 +30,18 @@ export default function Profile() {
         {user.bio && <p className="tiny muted" style={{ marginTop: 14, lineHeight: 1.55 }}>{user.bio}</p>}
       </div>
 
-      <div className="grid-2" style={{ gridTemplateColumns: '1fr 1fr 1fr' }}>
-        <div className="stat-card"><b>{stats.helped}</b><span>People helped</span></div>
+      <button
+        className="wallet-card"
+        onClick={() => navigate('/credits')}
+        style={{ width: '100%', textAlign: 'left', cursor: 'pointer', display: 'block' }}
+      >
+        <span className="cap">Credit balance</span>
+        <div className="bal">{credits} <IconCoin size={26} style={{ verticalAlign: '-3px' }} /></div>
+        <div className="sub">Tutor to earn · spend to get tutored · tap to manage</div>
+      </button>
+
+      <div className="grid-2" style={{ gridTemplateColumns: '1fr 1fr 1fr', marginTop: 14 }}>
+        <div className="stat-card"><b>{stats.tutored ?? stats.helped}</b><span>People tutored</span></div>
         <div className="stat-card"><b>{stats.sessions}</b><span>Swaps done</span></div>
         <div className="stat-card"><b>{stats.rating.toFixed(1)}</b><span>Peer rating</span></div>
       </div>
@@ -95,8 +106,8 @@ export default function Profile() {
         </div>
       </section>
 
-      <button className="btn block secondary" style={{ marginTop: 26 }} onClick={() => navigate('/matches')}>
-        <IconMatches size={16} /> Find new matches
+      <button className="btn block secondary" style={{ marginTop: 26 }} onClick={() => navigate('/discover')}>
+        <IconCompass size={16} /> Discover new tutors
       </button>
       <button
         className="btn block ghost"

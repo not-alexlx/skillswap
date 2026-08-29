@@ -7,9 +7,12 @@ import Welcome from './pages/Welcome.jsx';
 import SignIn from './pages/SignIn.jsx';
 import Signup from './pages/Signup.jsx';
 import Home from './pages/Home.jsx';
+import Discover from './pages/Discover.jsx';
+import Learn from './pages/Learn.jsx';
 import Matches from './pages/Matches.jsx';
 import MatchBlueprint from './pages/MatchBlueprint.jsx';
 import Category from './pages/Category.jsx';
+import Credits from './pages/Credits.jsx';
 import ChatList from './pages/ChatList.jsx';
 import ChatThread from './pages/ChatThread.jsx';
 import Call from './pages/Call.jsx';
@@ -19,7 +22,7 @@ import PeerProfile from './pages/PeerProfile.jsx';
 import Friends from './pages/Friends.jsx';
 import Notifications from './pages/Notifications.jsx';
 
-const TAB_ROUTES = ['/home', '/matches', '/chat', '/profile', '/friends', '/category', '/u/'];
+const TAB_ROUTES = ['/home', '/discover', '/learn', '/matches', '/chat', '/profile', '/friends', '/category', '/credits', '/u/'];
 
 export default function App() {
   const { onboarded } = useApp();
@@ -40,9 +43,12 @@ export default function App() {
           <Route path="/signup" element={onboarded ? <Navigate to="/home" replace /> : <Signup />} />
 
           <Route path="/home" element={<Guard><Home /></Guard>} />
+          <Route path="/discover" element={<Guard><Discover /></Guard>} />
+          <Route path="/learn" element={<Guard><Learn /></Guard>} />
           <Route path="/matches" element={<Guard><Matches /></Guard>} />
           <Route path="/matches/:id" element={<Guard><MatchBlueprint /></Guard>} />
           <Route path="/category/:id" element={<Guard><Category /></Guard>} />
+          <Route path="/credits" element={<Guard><Credits /></Guard>} />
           <Route path="/chat" element={<Guard><ChatList /></Guard>} />
           <Route path="/chat/:id" element={<Guard><ChatThread /></Guard>} />
           <Route path="/call/:id" element={<Guard><Call /></Guard>} />

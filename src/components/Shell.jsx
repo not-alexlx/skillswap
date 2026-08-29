@@ -1,5 +1,7 @@
 import { NavLink } from 'react-router-dom';
-import { IconHome, IconMatches, IconChat, IconProfile } from './Icons.jsx';
+import {
+  IconHome, IconCompass, IconBook, IconChat, IconProfile,
+} from './Icons.jsx';
 import { useApp } from '../context/AppContext.jsx';
 
 export function StatusBar() {
@@ -28,8 +30,9 @@ export function Frame({ children }) {
 }
 
 const TABS = [
-  { to: '/home', label: 'Home', Icon: IconHome },
-  { to: '/matches', label: 'Matches', Icon: IconMatches },
+  { to: '/home', label: 'Feed', Icon: IconHome },
+  { to: '/discover', label: 'Discover', Icon: IconCompass },
+  { to: '/learn', label: 'Learn', Icon: IconBook },
   { to: '/chat', label: 'Chat', Icon: IconChat, badgeKey: 'unreadChats' },
   { to: '/profile', label: 'Profile', Icon: IconProfile },
 ];

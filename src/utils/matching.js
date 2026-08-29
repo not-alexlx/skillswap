@@ -7,6 +7,16 @@ export function categoryForSkill(name) {
   return hit ? hit.cat : null;
 }
 
+// Distinct skill categories a peer can teach.
+export function categoriesForPeer(peer) {
+  return [...new Set((peer.offeredSkills || []).map(categoryForSkill).filter(Boolean))];
+}
+
+// Skills a peer offers that fall in a given category.
+export function peerSkillsInCategory(peer, catId) {
+  return (peer.offeredSkills || []).filter((s) => categoryForSkill(s) === catId);
+}
+
 // Skills the peer offers that the user needs.
 export function theyCanTeach(user, peer) {
   const need = new Set(user.neededSkills.map(norm));
@@ -58,6 +68,34 @@ export function rankedMatches(user, peers, mode = 'all') {
   if (mode === 'iCanHelp') list = list.filter((m) => m.learns.length > 0);
   if (mode === 'swaps') list = list.filter((m) => m.teaches.length > 0 && m.learns.length > 0);
   return list;
+}
+
+// Short human-readable reasons the algorithm surfaced this tutor.
+export function matchReasons(user, peer) {
+  const reasons = [];
+  const teaches = theyCanTeach(user, peer);
+  const learns = youCanTeach(user, peer);
+  const avail = sharedAvailability(user, peer);
+  if (teaches.length) reasons.push(`Teaches ${teaches.slice(0, 2).join(' & ')}`);
+  if (teaches.length && learns.length) reasons.push('Two-way swap — you can teach them back');
+  if (avail.length) reasons.push(`Free ${avail[0].toLowerCase()} like you`);
+  if (peer.school === user.school) reasons.push('Same school');
+  if ((peer.mutualFriends || 0) >= 2) reasons.push(`${peer.mutualFriends} mutual friends`);
+  if ((peer.rating || 0) >= 4.9) reasons.push(`Top-rated (${peer.rating}★)`);
+  return reasons.slice(0, 3);
+}
+
+// Auto-recommendations: best matches the user hasn't already connected with or passed on.
+// Tutors who can directly help the user float to the top; the list is then topped
+// up with strong all-round matches so there's always something to show.
+export function recommendedTutors(user, peers, { exclude = [], limit = 4 } = {}) {
+  const skip = new Set(exclude);
+  const all = rankedMatches(user, peers, 'all').filter((m) => !skip.has(m.peer.id));
+  const canHelp = all.filter((m) => m.teaches.length > 0);
+  const rest = all.filter((m) => m.teaches.length === 0);
+  return [...canHelp, ...rest]
+    .slice(0, limit)
+    .map((m) => ({ ...m, reasons: matchReasons(user, m.peer) }));
 }
 
 export function timeAgo(ts) {
